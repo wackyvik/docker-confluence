@@ -22,15 +22,16 @@ SWAP_LIMIT = $(shell /bin/echo $$[$(MEMORY_LIMIT)*2])
 JAVA_MEM_MAX = $(shell /bin/echo $$[$(MEMORY_LIMIT)-32+$(SWAP_LIMIT)])m
 JAVA_MEM_MIN = $(shell /bin/echo $$[$(MEMORY_LIMIT)/4])m
 CPU_LIMIT_LOAD_THP = $(shell /bin/echo $$[$(CPU_LIMIT_LOAD)*1000])
+IMAGE_ID = $(shell /usr/bin/docker images | /bin/grep "$(NAME)" | /bin/grep $(VERSION) | /bin/awk "{print \$$3}")
 
 .PHONY: all build install
 
-all: build install
+all: build
 
 build:
 	/usr/bin/docker build -t $(NAME):$(VERSION) --rm image
 
-install:
+run:
 	/usr/bin/docker run --publish 8091:8090 --name=confluence-$(VERSION) $(VOLUMES_FROM)                      \
 						-e CONFIGURE_SQL_DATASOURCE="$(CONFIGURE_SQL_DATASOURCE)"         \
 						-e CONFIGURE_FRONTEND="$(CONFIGURE_FRONTEND)"                     \
@@ -49,3 +50,16 @@ install:
 						--cpuset-cpus=$(CPU_LIMIT_CPUS) --cpu-quota=$(CPU_LIMIT_LOAD_THP) \
 						--blkio-weight=$(IO_LIMIT)                                        \
 						-d larionov/confluence:$(VERSION)
+
+tag_version:
+	@if [ -z "$(IMAGE_ID)" ]; then /bin/echo "Image is not yet built. Please run 'make build' before attempting once again."; false; fi
+	/usr/bin/docker tag $(IMAGE_ID) $(NAME):$(VERSION)
+
+tag_latest:
+	@if [ -z "$(IMAGE_ID)" ]; then /bin/echo "Image is not yet built. Please run 'make build' before attempting once again."; false; fi
+	/usr/bin/docker tag $(IMAGE_ID) $(NAME):latest
+
+push:
+	/usr/bin/docker push $(NAME)
+
+release: tag_version tag_latest push

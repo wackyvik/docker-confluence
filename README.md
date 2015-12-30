@@ -29,7 +29,8 @@ Forks Ingensi oracle-jdk Docker image.
   4. If you wish to build any other version of Atlassian Confluence -
      specify the version number in CONFLUENCE.VERSION file.
 
-  4. Run 'make'. Container will be built and initialized immediately.
+  5. Run 'make build run'. Container will be built and initialized
+     immediately.
 
   In case this system already has a previous version
   of this container (say with your current version of Confluence)
